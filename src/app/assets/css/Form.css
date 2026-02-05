@@ -1,0 +1,113 @@
+/* Form Container */
+
+  .form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 90vh;
+    overflow-x: hidden;
+  }
+
+  .form {
+    width: 100%;
+    padding: 3%;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  /* Form Title */
+  .form-container h1 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #999f9e;
+  }
+  
+  /* Form Group */
+  .form-group {
+    margin-bottom: 15px;
+    text-align: left;
+  }
+  
+  /* Labels */
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  /* Input Fields */
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.3s ease;
+  }
+  
+  .form-group input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+  }
+  
+  /* Submit Button */
+  button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #999f9e;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  
+  /* Footer Text */
+  .form-footer {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .form-footer a {
+    color: #999f9e;
+    text-decoration: none;
+  }
+  
+  .form-footer a:hover {
+    text-decoration: underline;
+  }
+
+  .label {
+    color:  #414141;
+    float: left;
+    font-size: 17px;
+  }
+  
+  /* Mobile Optimization */
+  @media (max-width: 480px) {
+    .form-container {
+      padding: 15px;
+    }
+  
+    .form-container h1 {
+      font-size: 20px;
+    }
+  
+    .form-group input {
+      font-size: 14px;
+      padding: 8px;
+    }
+  
+    button {
+      font-size: 14px;
+      padding: 10px;
+    }
+  }

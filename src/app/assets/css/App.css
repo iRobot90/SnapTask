@@ -1,0 +1,91 @@
+
+html, body, #root {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    border: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+* {
+    cursor: inherit !important; 
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar { width: 0px; background: black; }
+
+@media (hover: hover) {
+    .btn:hover, a:hover {
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+    }
+}
+
+.btn:active, a:active { opacity: 0.7; transform: scale(0.98); }
+header { background: #fff; color: #0E904D; text-align: left; }
+
+/* ============================================================
+    FLEETBO NATIVE RESET 
+   ============================================================ */
+.btn {
+    --bs-btn-hover-color: var(--bs-btn-color);
+    --bs-btn-active-color: var(--bs-btn-color);
+    --bs-btn-hover-bg: var(--bs-btn-bg);
+    --bs-btn-active-bg: var(--bs-btn-bg);
+    --bs-btn-hover-border-color: var(--bs-btn-border-color);
+    --bs-btn-active-border-color: var(--bs-btn-border-color);
+    box-shadow: none !important;
+    text-decoration: none;
+}
+
+.btn:hover, 
+.btn:focus,
+a:hover,
+a:focus {
+    color: var(--bs-btn-color) !important;
+    background-color: var(--bs-btn-bg) !important;
+    border-color: var(--bs-btn-border-color) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    text-decoration: none !important; 
+    opacity: 1 !important; 
+    transform: none !important;
+}
+
+.btn-link:hover, 
+.btn-link:focus,
+.fb-button:hover,
+.fb-button:focus {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: inherit !important; 
+}
+
+.btn:active, 
+a:active, 
+.card:active {
+    opacity: 0.6 !important; 
+    transform: scale(0.97) !important; 
+    transition: transform 0.05s ease, opacity 0.05s ease !important;
+}
+
+.form-control:focus, 
+input:focus, 
+textarea:focus {
+    box-shadow: none !important;
+    outline: none !important;
+    border-color: #86b7fe !important; 
+}
+
+.read {
+    background: #86b7fe;
+}
+.btn:active, a:active { opacity: 0.7; transform: scale(0.98); }
+.btn-header, .btn-delete { background: none; border: none; font-size: 18px; }
+.fb-button-logout { background-color: transparent; color: #0E904D; border-color: transparent; margin-top: 1.2rem; }

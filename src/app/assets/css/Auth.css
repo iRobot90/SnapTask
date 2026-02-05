@@ -1,0 +1,50 @@
+/* CSS for the Login Gateway (Login.jsx) 
+   "Really clean" version: no card, no shadow, just centered elements.
+*/
+
+/* 1. Main Container (Handles centering, white background) */
+.login-passerelle-container {
+  display: flex;
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  min-height: 100vh; /* Takes up 100% of screen height */
+  background-color: #ffffff; /* Native white background */
+  padding: 2.5rem; /* Padding applied to the container */
+  text-align: center; /* Centers logo and text */
+}
+
+/* 2. The Login "Box" (Now invisible) */
+.login-passerelle-box {
+  width: 100%;
+  max-width: 420px; /* Keeps content centered and readable */
+  /* This is now just a fixed-width container */
+}
+
+/* 4. Main Button Style */
+.login-passerelle-box .btn-success {
+  font-weight: 550;
+  font-size: 1.1rem; 
+  padding: 0.85rem 1rem; 
+  border-radius: 8px; /* Rounded corners for the button */
+  border: none;
+  transition: all 0.3s ease;
+  width: 100%; /* Button takes full width */
+}
+
+/* Hover effect for the button (subtler) */
+.login-passerelle-box .btn-success:hover {
+  transform: translateY(-2px);
+  /* Use subtle box-shadow for flat look */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+}
+
+/* 5. Typography */
+.login-passerelle-box h3 {
+  font-weight: 700;
+  color: #212529;
+}
+
+.login-passerelle-box p.text-muted {
+  font-size: 1rem;
+  line-height: 1.6;
+}
