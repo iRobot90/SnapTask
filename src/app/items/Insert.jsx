@@ -22,6 +22,7 @@ const InsertHeader = ({ onBack, onGallery }) => {
 };
 
 const Insert = () => {
+    const [isdata, setIsData]             = useState(null);
     const [loading, setLoading]             = useState(false);
     const [title, setTitle]                 = useState("");
     const [content, setContent]             = useState("");
@@ -33,8 +34,8 @@ const Insert = () => {
     const openCamera = async () => {
        // Appel au module natif (ou au Mock en dev)
        //const result = await Fleetbo.exec('DatingCamera');
-       const result = await Fleetbo.exec('StockCamera', 'open', {});
-       
+       const result = await Fleetbo.exec('Camera', 'open', {});
+       setIsData(JSON.stringify(result.url));
        // Gestion du retour universel
        if (result && result.url) {
            console.log('Nouvelle photo de profil :', result.url);
@@ -134,7 +135,8 @@ const Insert = () => {
                     </div>
 
                     <div className="mb-4">
-                        <label className="mb-1 text-secondary fs-6">uyewgfuygweyg</label>
+                        <label className="mb-1 text-secondary fs-6">Description</label>
+                        <p>{isdata}</p>
                         <textarea 
                             className="form-control" rows={4} 
                             value={content} onChange={e => setContent(e.target.value)} 
