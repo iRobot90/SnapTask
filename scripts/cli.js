@@ -74,28 +74,36 @@ if (!projectId) {
     console.error('\n Error: Project ID missing in .env.\n');
     process.exit(1);
 }
-const injectRouteIntoAppJs = (pageName, subPath = '') => {
-    if (!fs.existsSync(APP_JS_PATH)) return false;
-    let content = fs.readFileSync(APP_JS_PATH, 'utf8');
+const injectRouteIntoAppJs = (moduleName, subPath = '') => {
+    const appJsPath = path.join(process.cwd(), 'src', 'App.js');
+    if (!fs.existsSync(appJsPath)) {
+        console.error(`   \x1b[31m[Safety Stop]\x1b[0m App.js missing.`);
+        return false;
+    }
+    let content = fs.readFileSync(appJsPath, 'utf8');
     const importAnchor = '// FLEETBO_MORE_IMPORTS';
-    const alexRouteAnchor = '{/* FLEETBO_DYNAMIC ROUTES */}';
-    if (!content.includes(alexRouteAnchor)) return false;
-    // Chemin dynamique selon si c'est une page ou un mock
-    const pathPrefix = subPath ? `${subPath}/` : '';
-    const importLine = `import ${pageName} from './app/${pathPrefix}${pageName}';`; 
-    const routeLine = `<Route path="/${pathPrefix.toLowerCase()}${pageName.toLowerCase()}" element={<${pageName} />} />`;
-    let injected = false;
+    const routeAnchor = '{/* FLEETBO_DYNAMIC ROUTES */}';
+    if (!content.includes(importAnchor) || !content.includes(routeAnchor)) {
+        console.log(`   \x1b[33m[Skipped]\x1b[0m Anchors missing in App.js.`);
+        return false;
+    }
+    const cleanSubPath = subPath ? `${subPath}/` : '';
+    const importLine = `import ${moduleName} from './app/${cleanSubPath}${moduleName}';`;
+    const routeLine = `<Route path="/${cleanSubPath}${moduleName.toLowerCase()}" element={<${moduleName} />} />`;
+    let modified = false;
     if (!content.includes(importLine)) {
         content = content.replace(importAnchor, `${importLine}\n${importAnchor}`);
-        injected = true;
+        modified = true;
     }
     if (!content.includes(routeLine)) {
-        // Injection précise dans l'ancre Alex
-        content = content.replace(alexRouteAnchor, `${routeLine}\n            ${alexRouteAnchor}`);
-        injected = true;
+        content = content.replace(routeAnchor, `${routeLine}\n            ${routeAnchor}`);
+        modified = true;
     }
-    if (injected) fs.writeFileSync(APP_JS_PATH, content);
-    return injected;
+    if (modified) {
+        fs.writeFileSync(appJsPath, content);
+        console.log(`   \x1b[32m[Routed]\x1b[0m ${moduleName} injected into App.js safely.`);
+    }
+    return modified;
 };
 const showEnergyTransfer = async () => {
     const width = 30;
@@ -135,32 +143,23 @@ if (command === 'alex') {
                 if (aiData.remainingConsultations !== undefined) {
                     const remaining = aiData.remainingConsultations;
                     const limit = aiData.consultationLimit || 7; 
-                    const tierLabel = aiData.tier === 'pro' ? 'SENIOR' : 'JUNIOR';
+                    const tierLabel = aiData.tier === 'senior' ? 'SENIOR' : aiData.tier === 'expert' ? 'EXPERT' : 'JUNIOR';
                     const percent = Math.round((remaining / limit) * 100);
                     const energyColor = percent > 20 ? '\x1b[32m' : '\x1b[31m';
-                    console.log(`\x1b[36m⚡ Architect Fuel:\x1b[0m ${energyColor}${percent}%\x1b[0m (${remaining}/${limit} instructions left) [${tierLabel}]`);
+                    console.log(`\x1b[36m⚡ Architect Fuel:\x1b[0m ${energyColor}${percent}% [0m (${remaining}/${limit} instructions left) [${tierLabel}]`);
                     console.log('');
                 }
             }
             if (aiData.status === 'success' && aiData.moduleData) {
-                const { fileName, code, mockFileName, mockCode, moduleName, instructions, config_offload } = aiData.moduleData;
-                console.log(`   \x1b[90m  Architecting: ${moduleName}[0m`);
+                const { fileName, code, mockFileName, mockCode, moduleName, instructions } = aiData.moduleData;
+                console.log(`   \x1b[90m  Architecting: ${moduleName} [0m`);
                 const writeFile = (dir, name, content) => {
                 const fullPath = path.join(process.cwd(), dir);
                 const filePath = path.join(fullPath, name);
                 if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
                     fs.writeFileSync(filePath, content);
-                    console.log(`   [32m[Written][0m ${dir}${name}`);
+                    console.log(`    [32m[Written] [0m ${dir}${name}`);
                 };
-                if (instructions && Array.isArray(instructions) && instructions.length > 0) {
-                    console.log('\n\x1b[33m--- GUIDE (MCI) ---\x1b[0m');
-                    instructions.forEach(line => {
-                        if (typeof line === 'string') {
-                            const formattedLine = line.replace(/ACTION|CAPTURE|PERSPECTIVE/g, '\x1b[1m$&\x1b[0m');
-                            console.log(`   ${formattedLine}`);
-                        }
-                    });
-                }
                 if (code && fileName) {
                     const folder = fileName.endsWith('.kt') ? 'public/native/android/' : 'src/app/';
                     writeFile(folder, fileName, code);
@@ -171,11 +170,11 @@ if (command === 'alex') {
                     writeFile('src/app/mocks/', mockFileName, mockCode);
                     const injected = injectRouteIntoAppJs(pageName, 'mocks');
                     if (injected) {
-                        console.log(`   \x1b[32m[Routed][0m App.js -> /mocks/${pageName.toLowerCase()}`);
+                        console.log(`     \x1b[32m[Routed] [0m App.js -> /mocks/${pageName.toLowerCase()}`);
                     }
                 }
                 if (config_offload && (config_offload.dependencies?.length > 0 || config_offload.permissions?.length > 0)) {
-                    process.stdout.write(`   \x1b[33m[Cloud Inject]\x1b[0m Syncing ${config_offload.dependencies.length} libs to Factory...`);
+                    process.stdout.write(`   \x1b[33m[Cloud Inject] [0m Syncing ${config_offload.dependencies.length} libs to Factory...`);
                     try {
                         await axios.post(INJECT_DEPS_URL, {
                             projectId: projectId,
@@ -184,11 +183,22 @@ if (command === 'alex') {
                                 config_offload: config_offload 
                             }
                         });
-                        process.stdout.write(` \x1b[32mOK\x1b[0m\n`);
+                        process.stdout.write(` \x1b[32mOK [0m
+`);
                     } catch (err) {
-                        process.stdout.write(` \x1b[31mFAILED\x1b[0m\n`);
+                        process.stdout.write(` \x1b[31mFAILED [0m
+`);
                         console.error(`   ⚠️ Config sync failed: ${err.message}`);
                     }
+                }
+                if (instructions && Array.isArray(instructions) && instructions.length > 0) {
+                    console.log('\n\x1b[33m--- GUIDE (MCI) ---\x1b[0m');
+                    instructions.forEach(line => {
+                        if (typeof line === 'string') {
+                            const formattedLine = line.replace(/ACTION|CAPTURE|PERSPECTIVE/g, '\x1b[1m$&\x1b[0m');
+                            console.log(`   ${formattedLine}`);
+                        }
+                    });
                 }
             }
         } catch (error) { 
@@ -282,6 +292,7 @@ if (command === 'android' || command === 'ios') {
                 archive.directory(path.join(process.cwd(), buildDir), false);
                 archive.finalize();
             });
+            
             console.log(`\n\x1b[33mSyncing ${platform} logic bundle...\x1b[0m`);
             await showEnergyTransfer();
             
@@ -293,6 +304,7 @@ if (command === 'android' || command === 'ios') {
                 console.log(`\n\x1b[1m${platform.toUpperCase()} DEPLOYED\x1b[0m | \x1b[32mAlex ❯\x1b[0m Runtime updated.`);
             }
         } catch (error) { 
+            // Correction de l'affichage d'erreur
             console.error(`\n\x1b[31m Build Error:\x1b[0m ${error.response?.data?.error || error.message}`);
             process.exit(1); 
         }
@@ -316,13 +328,14 @@ function killProcessOnPort(port) {
 const killNetworkService = () => {
     if (uplinkProcess) {
         try {
-            uplinkProcess.kill('SIGINT'); 
+            uplinkProcess.kill('SIGINT'); // On demande poliment de s'arrêter
             console.log('[Fleetbo] Engine closed.');
         } catch (e) {
             console.error('[Fleetbo] Error closing tunnel:', e.message);
         }
     }
 };
+
 let isExiting = false;
 async function cleanupAndExit(code = 0) {
     if (isExiting) return;
@@ -344,10 +357,11 @@ process.on('SIGTERM', () => cleanupAndExit(0));
 async function syncFirebase(keyApp, networkUrl, testerEmail) {
     try {
         await axios.post(UPDATE_NETWORK_URL, { keyApp, networkUrl, tester: testerEmail });  
-        console.log(`\n\x1b[32m[Fleetbo]\x1b[0m -------------------------------------------------------------`);
-        console.log('\x1b[32m[Fleetbo]  GO GO GO ! FLEETBO STUDIO IS READY \x1b[0m');
-        console.log('\x1b[32m[Fleetbo]  You can now start coding and previewing in Studio. 🚀\x1b[0m');
-        console.log(`\x1b[32m[Fleetbo]\x1b[0m -------------------------------------------------------------`);
+        console.log(`\n\x1b[32m[Fleetbo] -------------------------------------------------------------`);
+        console.log('\x1b[32m[Fleetbo] GO GO GO ! FLEETBO COCKPIT IS READY \x1b[0m');
+        console.log('\x1b[32m[Fleetbo] You can now start coding and previewing in Cockpit. 🚀\x1b[0m');
+        console.log(`\x1b[32m[Fleetbo] -------------------------------------------------------------`);
+        console.log('\x1b[34m[Pilot Instruction] ❯ \x1b[0m Switch to your Fleetbo Cockpit tab to begin. \x1b[0m');
     } catch (err) {
         console.error(`[Fleetbo] Sync Error: ${err.message}`);
     }
@@ -356,37 +370,26 @@ async function runDevEnvironment() {
     console.log(`[Fleetbo] 🛡️  Initializing Dev Environment...`);
     killNetworkService();
     killProcessOnPort(PORT);
-    
     if (!testerEmail) { console.error('Error: REACT_APP_TESTER_EMAIL missing'); process.exit(1); }
     
     const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
     const devServer = spawn(npmCmd, ['start'], {
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: true,
-        env: { 
-            ...process.env, 
-            BROWSER: 'none', 
-            PORT: PORT.toString(),
-            DANGEROUSLY_DISABLE_HOST_CHECK: 'true',
-            HOST: '0.0.0.0',      
-            WDS_SOCKET_HOST: 'localhost',
-            WDS_SOCKET_PORT: PORT.toString()
-        }
+        env: { ...process.env, BROWSER: 'none', PORT: PORT.toString() }
     });
-
     devServer.stdout.pipe(process.stdout);
     devServer.stderr.pipe(process.stderr);
-
     let connectionStarted = false;
     devServer.stdout.on('data', (data) => {
         const output = data.toString();
-        
         if (!connectionStarted && (output.includes('Local:') || output.includes('Compiled successfully'))) {
             connectionStarted = true;
 
             console.log('\n[Fleetbo] ---------------------------------------------------');
             console.log(`[Fleetbo] 🔗 Establishing Secure Uplink...`);
-            console.log(`[Fleetbo] ⏳ Please wait for the green message...`);
+            console.log(`[Fleetbo] 🛑 DO NOT open the Fleetbo Studio yet. `);
+            console.log(`[Fleetbo] ⏳ Please wait green message...`);
             console.log('[Fleetbo] ---------------------------------------------------');
 
             const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
@@ -394,9 +397,8 @@ async function runDevEnvironment() {
                 'cloudflared', 
                 'tunnel', 
                 '--url', `http://127.0.0.1:${PORT}`,
-                '--http-host-header', `127.0.0.1:${PORT}` 
+                '--http-host-header', `127.0.0.1:${PORT}`
             ], { shell: true });
-
             uplinkProcess.stderr.on('data', (chunk) => {
                  const text = chunk.toString();
                  const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
@@ -405,5 +407,4 @@ async function runDevEnvironment() {
         }
     });
 }
-
 runDevEnvironment();

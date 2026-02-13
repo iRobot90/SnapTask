@@ -1,63 +1,132 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+
 function TaskDetail() {
+  const { id } = useParams();
   const [task, setTask] = useState(null);
-  const taskId = window.location.pathname.split('/').pop();
+  const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    Fleetbo.log('TaskDetail');
-    Fleetbo.onWebPageReady();
-    Fleetbo.getDoc('Tasks', 'UserTasks', taskId).then(setTask);
-  }, [taskId]);
-  const toggleComplete = () => {
-    const updatedTask = { ...task, completed: !task.completed };
-    Fleetbo.addWithId('Tasks', 'UserTasks', updatedTask, taskId);
-    setTask(updatedTask);
-  };
-  const setReminder = () => {
-    const reminderTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    loadTask();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-    // ALEX FIX: Use 'TaskScheduler' and timestamp number
-    Fleetbo.exec('TaskScheduler', 'schedule', {
-      id: taskId,
-      title: task.title,
-      message: 'Time to work on this task!',
-      timestamp: reminderTime.getTime()
-    });
-
-    alert('Reminder set for 1 hour!');
-  };
-  const deleteTask = () => {
-    if (window.confirm('Delete this task?')) {
-      Fleetbo.delete('Tasks', 'UserTasks', taskId);
-      Fleetbo.back();
+  const loadTask = () => {
+    try {
+      const stored = localStorage.getItem('tasks');
+      const tasks = stored ? JSON.parse(stored) : [];
+      const foundTask = tasks.find(t => t.id === id);
+      setTask(foundTask || null);
+    } catch (e) {
+      setTask(null);
+    } finally {
+      setLoading(false);
     }
   };
-  if (!task) return <div>Loading...</div>;
+
+  const handleDelete = () => {
+    if (!task) return;
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    try {
+      const stored = localStorage.getItem('tasks');
+      const tasks = stored ? JSON.parse(stored) : [];
+      const updatedTasks = tasks.filter(t => t.id !== id);
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      navigate('/tasklist');
+    } catch (e) {
+      alert('Error deleting task.');
+    } finally {
+      setShowDeleteModal(false);
+    }
+  };
+
+  if (loading) {
+    return <div style={{ padding: 16 }}>Loading...</div>;
+  }
+
+  if (!task) {
+    return (
+      <div style={{ padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <button onClick={() => navigate('/tasklist')} style={{ background: 'none', border: 'none', fontSize: 24, padding: 0 }}>
+            ←
+          </button>
+          <h2 style={{ margin: 0 }}>Task Details</h2>
+          <div style={{ width: 30 }} />
+        </div>
+        <p>Task not found.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="task-detail">
-      <button onClick={() => Fleetbo.back()}>← Back</button>
-
-      <h1>{task.title}</h1>
-      <p>{task.description}</p>
-      <small>Created: {new Date(task.createdAt).toLocaleDateString()}</small>
-
-      {task.photoUri && (
-        <img src={task.photoUri} alt="Task attachment" style={{ maxWidth: '100%', marginTop: '20px' }} />
-      )}
-
-      <div style={{ marginTop: '20px' }}>
-        <button onClick={toggleComplete}>
-          {task.completed ? '✓ Mark Incomplete' : '○ Mark Complete'}
+    <div style={{ padding: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <button onClick={() => navigate('/tasklist')} style={{ background: 'none', border: 'none', fontSize: 24, padding: 0 }}>
+          ←
         </button>
-
-        <button onClick={setReminder} style={{ marginLeft: '10px' }}>
-          ⏰ Remind Me (1h)
-        </button>
-
-        <button onClick={deleteTask} style={{ marginLeft: '10px', background: '#e74c3c' }}>
-          Delete Task
+        <h2 style={{ margin: 0 }}>Task Details</h2>
+        <button onClick={handleDelete} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 4 }}>
+          Delete
         </button>
       </div>
+
+      <div style={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
+        <div style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 8 }}>{task.title}</div>
+        {task.description && <div style={{ color: '#666', marginBottom: 12 }}>{task.description}</div>}
+        <div style={{ color: '#999', fontSize: 14 }}>
+          Created: {new Date(task.createdAt).toLocaleString()}
+        </div>
+        {task.photoUri && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Attached Photo:</div>
+            <img src={task.photoUri} alt="Task" style={{ maxWidth: '100%', borderRadius: 8 }} />
+          </div>
+        )}
+      </div>
+
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: 24,
+            borderRadius: 8,
+            width: '85%',
+            maxWidth: 320
+          }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: 18 }}>Delete Task?</h3>
+            <p style={{ margin: '0 0 24px 0', color: '#666' }}>
+              Are you sure you want to delete this task? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ background: 'none', border: 'none', color: '#666', fontWeight: 'bold', padding: '8px 12px' }}>
+                Cancel
+              </button>
+              <button onClick={confirmDelete} style={{ background: 'none', border: 'none', color: '#dc3545', fontWeight: 'bold', padding: '8px 12px' }}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 export default TaskDetail;

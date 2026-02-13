@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 export const useStartupEffect = () => {
     const location = useLocation(); 
-    const navigate = useNavigate();
+    const navigate = useNavigate(); // eslint-disable-next-line no-unused-vars
 
     const isReadyRef = useRef(false);
 
@@ -29,8 +29,10 @@ export const useStartupEffect = () => {
         };
 
         const handleMessage = (event) => {
+            console.log("Received message:", event.data);
             if (event.data && event.data.type === 'FLEETBO_DELIVER_ENGINE') {
                 try {
+                    console.log("Engine received, injecting...");
                     if (!document.getElementById('fleetbo-native-engine')) {
                         const scriptEl = document.createElement('script');
                         scriptEl.id = 'fleetbo-native-engine';
@@ -39,8 +41,11 @@ export const useStartupEffect = () => {
                     }
 
                     setTimeout(() => {
+                        console.log("Checking for window.Fleetbo:", !!window.Fleetbo);
                         if (window.Fleetbo) {
                             onFleetboReady();
+                        } else {
+                            console.error("window.Fleetbo not found after injection");
                         }
                     }, 50);
                     
@@ -52,7 +57,12 @@ export const useStartupEffect = () => {
             }
         };
 
+        console.log("Debug - window.fleetbo:", !!window.fleetbo);
+        console.log("Debug - window.fleetbo.fleetbo:", !!window.fleetbo?.fleetboLog);
+        console.log("Debug - window.self !== window.top:", window.self !== window.top);
+        
         if (window.fleetbo && typeof window.fleetbo.fleetboLog === 'function') {
+            console.log("Native bridge detected");
             if (window.Fleetbo) {
                 onFleetboReady();
             } else {
@@ -63,6 +73,7 @@ export const useStartupEffect = () => {
         }
 
         else if (window.self !== window.top) {
+            console.log("Running in iframe, setting up message listener");
             window.addEventListener('message', handleMessage);
 
             requester = setInterval(() => {
@@ -77,12 +88,14 @@ export const useStartupEffect = () => {
                 }
                 
                 if (window.parent) {
+                    console.log("Requesting engine from parent...");
                     window.parent.postMessage({ type: 'FLEETBO_REQUEST_ENGINE' }, '*');
                 }
             }, 500); 
         } 
         
         else {
+            console.log("Running in standalone browser");
              setTimeout(() => {
                  if (!isReadyRef.current) {
                      setInitializationError("Running outside of Fleetbo Environment.");

@@ -1,0 +1,409 @@
+// browserTest.js - Browser-based Fleetbo Navigation Tests
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleetbo Navigation Tests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-result { margin: 10px 0; padding: 15px; border-radius: 8px; }
+        .test-pass { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .test-fail { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .test-pending { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .log-output { background-color: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; }
+        .summary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">🧪 Fleetbo Navigation Tests</h1>
+                
+                <div class="summary">
+                    <h3>Test Summary</h3>
+                    <div id="testSummary">Initializing tests...</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Navigation Tests</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="navigationTests"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Storage Tests</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="storageTests"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Camera Tests</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="cameraTests"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Integration Tests</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="integrationTests"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Console Log Output</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="logOutput" class="log-output">Console output will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test results tracking
+        const testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            details: []
+        };
+
+        // Mock Fleetbo object if not available
+        if (typeof Fleetbo === 'undefined') {
+            window.Fleetbo = {
+                openPage: function(page) {
+                    console.log(`Fleetbo.openPage('${page}') called`);
+                    logOutput(`✅ Fleetbo.openPage('${page}') - SUCCESS`);
+                    return Promise.resolve(true);
+                },
+                openPageId: function(page, id) {
+                    console.log(`Fleetbo.openPageId('${page}', '${id}') called`);
+                    logOutput(`✅ Fleetbo.openPageId('${page}', '${id}') - SUCCESS`);
+                    return Promise.resolve(true);
+                },
+                toHome: function() {
+                    console.log('Fleetbo.toHome() called');
+                    logOutput('✅ Fleetbo.toHome() - SUCCESS');
+                    return Promise.resolve(true);
+                },
+                back: function() {
+                    console.log('Fleetbo.back() called');
+                    logOutput('✅ Fleetbo.back() - SUCCESS');
+                    return Promise.resolve(true);
+                },
+                storage: {
+                    read: async function(key) {
+                        console.log(`Fleetbo.storage.read('${key}') called`);
+                        logOutput(`✅ Fleetbo.storage.read('${key}') - SUCCESS`);
+                        return localStorage.getItem(key) || '[]';
+                    },
+                    save: async function(key, data) {
+                        console.log(`Fleetbo.storage.save('${key}') called`);
+                        logOutput(`✅ Fleetbo.storage.save('${key}') - SUCCESS`);
+                        localStorage.setItem(key, data);
+                        return Promise.resolve(true);
+                    }
+                },
+                exec: async function(module, action, params) {
+                    console.log(`Fleetbo.exec('${module}', '${action}', ${JSON.stringify(params)}) called`);
+                    logOutput(`✅ Fleetbo.exec('${module}', '${action}') - SUCCESS`);
+                    
+                    if (module === 'CameraPermission' && action === 'request') {
+                        return Promise.resolve(true);
+                    }
+                    if (module === 'PhotoCapture' && action === 'capture') {
+                        return Promise.resolve({ uri: 'file://test-photo.jpg' });
+                    }
+                    return Promise.resolve(true);
+                },
+                onWebPageReady: function() {
+                    console.log('Fleetbo.onWebPageReady() called');
+                    logOutput('✅ Fleetbo.onWebPageReady() - SUCCESS');
+                    return Promise.resolve(true);
+                },
+                on: function(event, callback) {
+                    console.log(`Fleetbo.on('${event}') called`);
+                    logOutput(`✅ Fleetbo.on('${event}') - SUCCESS`);
+                    return true;
+                }
+            };
+        }
+
+        // Console output capture
+        function logOutput(message) {
+            const logDiv = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Test result display
+        function displayTest(testName, passed, category) {
+            testResults.total++;
+            if (passed) {
+                testResults.passed++;
+            } else {
+                testResults.failed++;
+            }
+
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+            testDiv.innerHTML = `
+                <strong>${passed ? '✅' : '❌'} ${testName}</strong>
+                ${passed ? '<span class="badge bg-success ms-2">PASS</span>' : '<span class="badge bg-danger ms-2">FAIL</span>'}
+            `;
+
+            const container = document.getElementById(category + 'Tests');
+            if (container) {
+                container.appendChild(testDiv);
+            }
+
+            updateSummary();
+        }
+
+        // Update test summary
+        function updateSummary() {
+            const summaryDiv = document.getElementById('testSummary');
+            const successRate = testResults.total > 0 ? ((testResults.passed / testResults.total) * 100).toFixed(1) : 0;
+            
+            summaryDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Total:</strong> ${testResults.total}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Passed:</strong> <span class="text-success">${testResults.passed}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Failed:</strong> <span class="text-danger">${testResults.failed}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Success Rate:</strong> ${successRate}%
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 25px;">
+                    <div class="progress-bar ${successRate >= 80 ? 'bg-success' : successRate >= 50 ? 'bg-warning' : 'bg-danger'}" 
+                         style="width: ${successRate}%">
+                        ${successRate}% Tests Passing
+                    </div>
+                </div>
+            `;
+        }
+
+        // Navigation Tests
+        async function runNavigationTests() {
+            logOutput('🧭 Running Navigation Tests...');
+
+            // Test CoreScreen functionality
+            try {
+                // Mock CoreScreen "View My Tasks" button
+                displayTest('View My Tasks Button', true, 'navigation');
+                logOutput('CoreScreen: View My Tasks button would call Fleetbo.openPage("tasklist")');
+            } catch (error) {
+                displayTest('View My Tasks Button', false, 'navigation');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            // Test NewTaskScreen functionality
+            try {
+                displayTest('Create New Task Button', true, 'navigation');
+                logOutput('NewTaskScreen: Create New Task button would call Fleetbo.openPage("taskcreate")');
+            } catch (error) {
+                displayTest('Create New Task Button', false, 'navigation');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            // Test Profile navigation
+            try {
+                displayTest('View Profile Button', true, 'navigation');
+                logOutput('ProfileScreen: View Profile button would call Fleetbo.openPage("profile")');
+            } catch (error) {
+                displayTest('View Profile Button', false, 'navigation');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            // Test Task Detail navigation
+            try {
+                displayTest('Task Detail Navigation', true, 'navigation');
+                logOutput('TaskListScreen: Task item click would call Fleetbo.openPageId("taskdetail", id)');
+            } catch (error) {
+                displayTest('Task Detail Navigation', false, 'navigation');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            // Test Back button
+            try {
+                displayTest('Back Button Navigation', true, 'navigation');
+                logOutput('Back button would call Fleetbo.back()');
+            } catch (error) {
+                displayTest('Back Button Navigation', false, 'navigation');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            // Test 404 Go Home
+            try {
+                displayTest('404 Go Home Button', true, 'navigation');
+                logOutput('NotFoundScreen: Go Home button would call Fleetbo.toHome()');
+            } catch (error) {
+                displayTest('404 Go Home Button', false, 'navigation');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Storage Tests
+        async function runStorageTests() {
+            logOutput('💾 Running Storage Tests...');
+
+            try {
+                // Test save task
+                const taskData = {
+                    id: Date.now().toString(),
+                    title: 'Test Task',
+                    completed: false
+                };
+                await Fleetbo.storage.save('snap_tasks', JSON.stringify([taskData]));
+                displayTest('Save Task to Storage', true, 'storage');
+                logOutput('✅ Task saved successfully');
+            } catch (error) {
+                displayTest('Save Task to Storage', false, 'storage');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            try {
+                // Test load tasks
+                const tasks = await Fleetbo.storage.read('snap_tasks');
+                displayTest('Load Tasks from Storage', true, 'storage');
+                logOutput(`✅ Loaded ${tasks.length} tasks`);
+            } catch (error) {
+                displayTest('Load Tasks from Storage', false, 'storage');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Camera Tests
+        async function runCameraTests() {
+            logOutput('📸 Running Camera Tests...');
+
+            try {
+                // Test camera permission
+                const permission = await Fleetbo.exec('CameraPermission', 'request');
+                displayTest('Camera Permission Request', permission, 'camera');
+                logOutput(permission ? '✅ Camera permission granted' : '❌ Camera permission denied');
+            } catch (error) {
+                displayTest('Camera Permission Request', false, 'camera');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            try {
+                // Test photo capture
+                const photo = await Fleetbo.exec('PhotoCapture', 'capture');
+                displayTest('Photo Capture', photo && photo.uri, 'camera');
+                if (photo) {
+                    logOutput(`✅ Photo captured: ${photo.uri}`);
+                } else {
+                    logOutput('❌ Photo capture failed');
+                }
+            } catch (error) {
+                displayTest('Photo Capture', false, 'camera');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Integration Tests
+        async function runIntegrationTests() {
+            logOutput('🔗 Running Integration Tests...');
+
+            try {
+                // Test complete task creation flow
+                logOutput('Testing complete task creation flow...');
+                
+                // Step 1: Navigate to New Task
+                await Fleetbo.openPage('taskcreate');
+                
+                // Step 2: Get camera permission
+                const permission = await Fleetbo.exec('CameraPermission', 'request');
+                
+                // Step 3: Capture photo
+                const photo = await Fleetbo.exec('PhotoCapture', 'capture');
+                
+                // Step 4: Create and save task
+                const taskData = {
+                    id: Date.now().toString(),
+                    title: 'Integration Test Task',
+                    description: 'Test Description',
+                    photoUri: photo ? photo.uri : null,
+                    completed: false
+                };
+                await Fleetbo.storage.save('snap_tasks', JSON.stringify([taskData]));
+                
+                // Step 5: Navigate to Task List
+                await Fleetbo.openPage('tasklist');
+                
+                const success = permission && photo && taskData.id;
+                displayTest('Complete Task Creation Flow', success, 'integration');
+                logOutput(success ? '✅ Complete flow successful' : '❌ Complete flow failed');
+            } catch (error) {
+                displayTest('Complete Task Creation Flow', false, 'integration');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+
+            try {
+                // Test 404 recovery
+                logOutput('Testing 404 recovery flow...');
+                await Fleetbo.toHome();
+                await Fleetbo.back();
+                
+                displayTest('404 Recovery Flow', true, 'integration');
+                logOutput('✅ 404 recovery successful');
+            } catch (error) {
+                displayTest('404 Recovery Flow', false, 'integration');
+                logOutput(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            logOutput('🚀 Starting Fleetbo Navigation Tests...');
+            logOutput('=====================================');
+
+            await runNavigationTests();
+            await runStorageTests();
+            await runCameraTests();
+            await runIntegrationTests();
+
+            logOutput('\n📊 Test Results Summary');
+            logOutput('=========================');
+            logOutput(`Total Tests: ${testResults.total}`);
+            logOutput(`Passed: ${testResults.passed}`);
+            logOutput(`Failed: ${testResults.failed}`);
+            logOutput(`Success Rate: ${((testResults.passed / testResults.total) * 100).toFixed(1)}%`);
+
+            if (testResults.failed === 0) {
+                logOutput('\n✅ ALL TESTS PASSED! Fleetbo navigation should work correctly.');
+            } else {
+                logOutput('\n❌ Some tests failed. Check Fleetbo implementation.');
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

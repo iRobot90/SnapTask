@@ -1,0 +1,143 @@
+{
+  "timestamp": "2026-02-12T15:38:06.773Z",
+  "summary": {
+    "total": 15,
+    "passed": 0,
+    "failed": 15,
+    "successRate": "0.0"
+  },
+  "details": [
+    {
+      "name": "NavigationHelper.goToHome()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.goToTaskList()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.goToNewTask()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.goToProfile()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.goToTaskDetail()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.handleBackButton()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.signalPageReady()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "CoreScreen component loads",
+      "status": "FAIL",
+      "duration": 8,
+      "output": [
+        "CoreScreen load error: Unexpected token '<'"
+      ]
+    },
+    {
+      "name": "NotFoundScreen component loads",
+      "status": "FAIL",
+      "duration": 1,
+      "output": [
+        "CoreScreen load error: Unexpected token '<'",
+        "NotFoundScreen load error: Unexpected token '<'"
+      ]
+    },
+    {
+      "name": "NewTaskScreen component loads",
+      "status": "FAIL",
+      "duration": 3,
+      "output": [
+        "CoreScreen load error: Unexpected token '<'",
+        "NotFoundScreen load error: Unexpected token '<'",
+        "NewTaskScreen load error: Unexpected token '<'"
+      ]
+    },
+    {
+      "name": "TaskListScreen component loads",
+      "status": "FAIL",
+      "duration": 2,
+      "output": [
+        "NotFoundScreen load error: Unexpected token '<'",
+        "NewTaskScreen load error: Unexpected token '<'",
+        "TaskListScreen load error: Unexpected token '<'"
+      ]
+    },
+    {
+      "name": "NavigationHelper.saveTask()",
+      "status": "FAIL",
+      "duration": 1,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "NavigationHelper.takePhoto()",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "Complete task creation flow",
+      "status": "FAIL",
+      "duration": 1,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    },
+    {
+      "name": "404 recovery flow",
+      "status": "FAIL",
+      "duration": 0,
+      "output": [
+        "Cannot find module './utils/NavigationHelper'\nRequire stack:\n- /Users/supercomputer/Documents/Projects/Fleetbo/SnapTask01/testRunner.js"
+      ]
+    }
+  ],
+  "fleetboCalls": [],
+  "errors": [
+    "CoreScreen load error: Unexpected token '<'",
+    "NotFoundScreen load error: Unexpected token '<'",
+    "NewTaskScreen load error: Unexpected token '<'",
+    "TaskListScreen load error: Unexpected token '<'"
+  ]
+}

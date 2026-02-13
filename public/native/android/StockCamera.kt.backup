@@ -1,0 +1,232 @@
+// @Fleetbo Deploy
+// @Fleetbo ModuleName: StockCamera
+// @Fleetbo manifest:Root <uses-permission android:name="android.permission.CAMERA" />
+// @Fleetbo manifest:App <meta-data android:name="com.fleetbo.module.camera" android:value="true" />
+
+package com.fleetbo.user.modules
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.content.Context
+import android.graphics.Color
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.Button
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import com.fleetbo.sdk.FleetboModule
+import java.io.File
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+
+class StockCamera(context: Context, communicator: Any) : FleetboModule(context, communicator) {
+
+    private var imageCapture: ImageCapture? = null
+    private lateinit var cameraExecutor: ExecutorService
+    private var rootLayout: FrameLayout? = null
+    private var pendingCallbackId: String? = null
+
+    init {
+        cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    fun checkPermission(callbackId: String, params: String) {
+        val permission = Manifest.permission.CAMERA
+        val activity = getCurrentActivity()
+        
+        if (activity == null) {
+            sendError(callbackId, "No activity available")
+            return
+        }
+        
+        val granted = ContextCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED
+        val response = mapOf("granted" to granted)
+        sendSuccess(callbackId, response)
+    }
+
+    fun requestPermission(callbackId: String, params: String) {
+        val permission = Manifest.permission.CAMERA
+        val activity = getCurrentActivity()
+        
+        if (activity == null) {
+            sendError(callbackId, "No activity available")
+            return
+        }
+        
+        val alreadyGranted = ContextCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED
+        
+        if (alreadyGranted) {
+            val response = mapOf("granted" to true, "status" to "granted")
+            sendSuccess(callbackId, response)
+            emitEvent("CAMERA_PERMISSION_RESULT", response)
+            emitEvent("PERMISSION_RESULT", mapOf("permission" to "camera", "granted" to true, "status" to "granted"))
+        } else {
+            pendingCallbackId = callbackId
+            ActivityCompat.requestPermissions(activity, arrayOf(permission), REQUEST_CODE_CAMERA)
+            val response = mapOf("granted" to false, "status" to "pending")
+            sendSuccess(callbackId, response)
+            emitEvent("PERMISSION_REQUESTED", mapOf("permission" to "camera"))
+        }
+    }
+
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        if (requestCode != REQUEST_CODE_CAMERA) return
+        
+        val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        
+        val response = mapOf(
+            "permission" to "camera",
+            "granted" to granted,
+            "status" to if (granted) "granted" else "denied"
+        )
+        
+        emitEvent("CAMERA_PERMISSION_RESULT", response)
+        emitEvent("PERMISSION_RESULT", response)
+        
+        if (granted) {
+            emitEvent("CAMERA_PERMISSION_GRANTED", response)
+        } else {
+            emitEvent("CAMERA_PERMISSION_DENIED", response)
+        }
+        
+        pendingCallbackId?.let { callbackId ->
+            sendSuccess(callbackId, response)
+            pendingCallbackId = null
+        }
+    }
+
+    fun capture(callbackId: String, params: String) {
+        val permission = Manifest.permission.CAMERA
+        val activity = getCurrentActivity()
+        
+        if (activity == null) {
+            sendError(callbackId, "No activity available")
+            return
+        }
+        
+        val granted = ContextCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED
+        
+        if (!granted) {
+            requestPermission(callbackId, params)
+            return
+        }
+        
+        runOnUi {
+            setupCameraUI(callbackId)
+        }
+    }
+
+    private fun setupCameraUI(callbackId: String) {
+        rootLayout = FrameLayout(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.BLACK)
+        }
+
+        val viewFinder = PreviewView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val captureBtn = Button(context).apply {
+            text = ""
+            background = android.graphics.drawable.ShapeDrawable(android.graphics.drawable.shapes.OvalShape()).apply {
+                paint.color = Color.WHITE
+            }
+            layoutParams = FrameLayout.LayoutParams(200, 200).apply {
+                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                bottomMargin = 100
+            }
+            setOnClickListener {
+                takePhoto(callbackId)
+            }
+        }
+
+        rootLayout?.addView(viewFinder)
+        rootLayout?.addView(captureBtn)
+
+        attachNativeView(rootLayout!!)
+        startCamera(viewFinder)
+    }
+
+    private fun startCamera(viewFinder: PreviewView) {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+
+        cameraProviderFuture.addListener({
+            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(viewFinder.surfaceProvider)
+            }
+
+            imageCapture = ImageCapture.Builder().build()
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            try {
+                cameraProvider.unbindAll()
+                val lifecycleOwner = getCurrentActivity()
+                if (lifecycleOwner != null) {
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageCapture
+                    )
+                } else {
+                    imageCapture = null
+                }
+            } catch (exc: Exception) {
+                imageCapture = null
+            }
+        }, ContextCompat.getMainExecutor(context))
+    }
+
+    private fun takePhoto(callbackId: String) {
+        val capture = imageCapture
+        if (capture == null) {
+            sendError(callbackId, "Camera not ready")
+            return
+        }
+
+        val photoFile = File(
+            context.cacheDir,
+            "stock_${System.currentTimeMillis()}.jpg"
+        )
+
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+        capture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exc: ImageCaptureException) {
+                    sendError(callbackId, "Capture failed: ${exc.message}")
+                }
+
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    runOnUi {
+                        removeView(rootLayout!!)
+                    }
+                    val response = "{\"url\": \"file://${photoFile.absolutePath}\"}"
+                    sendSuccess(callbackId, response)
+                }
+            }
+        )
+    }
+
+    companion object {
+        const val REQUEST_CODE_CAMERA = 1001
+    }
+}

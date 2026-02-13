@@ -18,8 +18,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "fleetbo": "node scripts/cli.js",
-    "dev": "node scripts/cli.js"
+    "fleetbo": "npx -y fleetbo-cockpit-cli@latest",
+    "dev": "npx -y fleetbo-cockpit-cli@latest"
   },
   "eslintConfig": {
     "extends": [
@@ -44,6 +44,8 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "archiver": "^7.0.1",
     "axios": "^1.13.4",
     "cloudflared": "^0.7.1",
