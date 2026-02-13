@@ -18,10 +18,12 @@ function Camera() {
   };
 
   const handleUsePhoto = () => {
+    sessionStorage.setItem('cameraResult', JSON.stringify({ uri: photoUri }));
+    
     if (Fleetbo && Fleetbo.close) {
       Fleetbo.close({ uri: photoUri });
     } else {
-      navigate(returnTo, { state: { photoUri } });
+      navigate(returnTo);
     }
   };
 

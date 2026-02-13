@@ -11,25 +11,34 @@ function CreateTask() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.state && location.state.photoUri) {
-      setPhotoUri(location.state.photoUri);
-      if (location.state.title) setTitle(location.state.title);
-      if (location.state.description) setDescription(location.state.description);
-      window.history.replaceState({}, document.title);
+    const saved = sessionStorage.getItem('createTaskForm');
+    if (saved) {
+      const data = JSON.parse(saved);
+      setTitle(data.title || '');
+      setDescription(data.description || '');
+      setPhotoUri(data.photoUri || null);
+      sessionStorage.removeItem('createTaskForm');
     }
-  }, [location.state]);
+  }, []);
+
+  useEffect(() => {
+    const cameraResult = sessionStorage.getItem('cameraResult');
+    if (cameraResult) {
+      const result = JSON.parse(cameraResult);
+      if (result.uri) {
+        setPhotoUri(result.uri);
+      }
+      sessionStorage.removeItem('cameraResult');
+    }
+  }, []);
 
   const handleTakePhoto = () => {
+    sessionStorage.setItem('createTaskForm', JSON.stringify({ title, description, photoUri }));
+    
     if (Fleetbo && typeof Fleetbo.openPage === 'function') {
-      Fleetbo.openPage('camera').then(result => {
-        if (result && result.uri) {
-          setPhotoUri(result.uri);
-        }
-      }).catch(err => {
-        console.error('Camera error:', err);
-      });
+      Fleetbo.openPage('camera');
     } else {
-      navigate('/camera', { state: { title, description, returnTo: '/createtask' } });
+      navigate('/camera', { state: { returnTo: '/createtask' } });
     }
   };
 
